@@ -66,6 +66,26 @@
       </svg>
     );
 
+    const Sun = ({ className }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="12" r="5"/>
+        <line x1="12" y1="1" x2="12" y2="3"/>
+        <line x1="12" y1="21" x2="12" y2="23"/>
+        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/>
+        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/>
+        <line x1="1" y1="12" x2="3" y2="12"/>
+        <line x1="21" y1="12" x2="23" y2="12"/>
+        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/>
+        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/>
+      </svg>
+    );
+
+    const Moon = ({ className }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/>
+      </svg>
+    );
+
     const Minus = ({ className }) => (
       <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <line x1="5" y1="12" x2="19" y2="12"/>
@@ -73,6 +93,7 @@
     );
 
     const AcupunctureMassageFeeCalculator = () => {
+      const [isDarkMode, setIsDarkMode] = useState(false);
       const [treatmentTypes, setTreatmentTypes] = useState({
         massage: false,
         acupuncture: false
@@ -143,14 +164,21 @@
         if (treatmentTypes.massage) {
           let massageFee = 0;
           
-          if (visitType === 'clinic') {
+          if (visitType === 'clinic' || visitDetails.isSuddenVisit) {
+            // 通所または突発的往療の場合
             massageFee = fees.massage.clinic[massageAreas];
-            breakdown.push(`マッサージ施術料（${massageAreas}局所・通所）: ¥${massageFee.toLocaleString()}`);
+            if (visitDetails.isSuddenVisit) {
+              breakdown.push(`マッサージ施術料（${massageAreas}局所・突発的往療）: ¥${massageFee.toLocaleString()}`);
+            } else {
+              breakdown.push(`マッサージ施術料（${massageAreas}局所・通所）: ¥${massageFee.toLocaleString()}`);
+            }
           } else if (visitDetails.visitFeeAppliedTo === 'massage') {
+            // 定期的訪問施術料をマッサージに適用
             const category = getVisitFeeCategory(visitDetails.totalPatients);
             massageFee = fees.massage[category][massageAreas];
             breakdown.push(`${getVisitFeeName(visitDetails.totalPatients)}（マッサージ・${massageAreas}局所）: ¥${massageFee.toLocaleString()}`);
           } else {
+            // 通所料金のみ（訪問施術料は鍼灸に適用）
             massageFee = fees.massage.clinic[massageAreas];
             breakdown.push(`マッサージ施術料（${massageAreas}局所・併用時）: ¥${massageFee.toLocaleString()}`);
           }
@@ -175,21 +203,28 @@
         if (treatmentTypes.acupuncture) {
           let acupunctureFee = 0;
           
-          if (visitType === 'clinic') {
+          if (visitType === 'clinic' || visitDetails.isSuddenVisit) {
+            // 通所または突発的往療の場合
             acupunctureFee = fees.acupuncture.clinic[acupunctureTechnique];
-            breakdown.push(`鍼灸施術料（${acupunctureTechnique === 'one' ? '1術' : '2術'}・通所）: ¥${acupunctureFee.toLocaleString()}`);
+            if (visitDetails.isSuddenVisit) {
+              breakdown.push(`鍼灸施術料（${acupunctureTechnique === 'one' ? '1術' : '2術'}・突発的往療）: ¥${acupunctureFee.toLocaleString()}`);
+            } else {
+              breakdown.push(`鍼灸施術料（${acupunctureTechnique === 'one' ? '1術' : '2術'}・通所）: ¥${acupunctureFee.toLocaleString()}`);
+            }
           } else if (visitDetails.visitFeeAppliedTo === 'acupuncture') {
+            // 定期的訪問施術料を鍼灸に適用
             const category = getVisitFeeCategory(visitDetails.totalPatients);
             acupunctureFee = fees.acupuncture[category][acupunctureTechnique];
             breakdown.push(`${getVisitFeeName(visitDetails.totalPatients)}（鍼灸・${acupunctureTechnique === 'one' ? '1術' : '2術'}）: ¥${acupunctureFee.toLocaleString()}`);
           } else {
+            // 通所料金のみ（訪問施術料はマッサージに適用）
             acupunctureFee = fees.acupuncture.clinic[acupunctureTechnique];
             breakdown.push(`鍼灸施術料（${acupunctureTechnique === 'one' ? '1術' : '2術'}・併用時）: ¥${acupunctureFee.toLocaleString()}`);
           }
           
           totalFee += acupunctureFee;
 
-          if (visitDetails.isInitialVisit) {
+          if (visitDetails.isInitialVisit && !visitDetails.isSuddenVisit) {
             const initialFee = fees.acupuncture.initialFee[acupunctureTechnique];
             totalFee += initialFee;
             breakdown.push(`初検料（${acupunctureTechnique === 'one' ? '1術' : '2術'}）: ¥${initialFee.toLocaleString()}`);
@@ -238,23 +273,51 @@
       const isAnyTreatmentSelected = treatmentTypes.massage || treatmentTypes.acupuncture;
 
       return (
-        <div className="max-w-4xl mx-auto p-4 bg-gradient-to-br from-blue-50 to-green-50 min-h-screen">
-          <div className="bg-white rounded-2xl shadow-xl p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <Calculator className="w-8 h-8 text-blue-600" />
-              <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
-                訪問鍼灸マッサージ料金計算システム
-              </h1>
+        <div className={`max-w-4xl mx-auto p-4 min-h-screen transition-colors duration-300 ${
+          isDarkMode 
+            ? 'bg-gradient-to-br from-gray-900 to-gray-800' 
+            : 'bg-gradient-to-br from-blue-50 to-green-50'
+        }`}>
+          <div className={`rounded-2xl shadow-xl p-6 transition-colors duration-300 ${
+            isDarkMode ? 'bg-gray-800' : 'bg-white'
+          }`}>
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-3">
+                <Calculator className={`w-8 h-8 ${isDarkMode ? 'text-blue-400' : 'text-blue-600'}`} />
+                <h1 className={`text-3xl md:text-4xl font-bold ${isDarkMode ? 'text-white' : 'text-gray-800'}`}>
+                  訪問鍼灸マッサージ料金計算システム
+                </h1>
+              </div>
+              
+              <button
+                onClick={() => setIsDarkMode(!isDarkMode)}
+                className={`p-2 rounded-lg transition-colors duration-300 ${
+                  isDarkMode 
+                    ? 'bg-gray-700 hover:bg-gray-600 text-yellow-400' 
+                    : 'bg-gray-100 hover:bg-gray-200 text-gray-600'
+                }`}
+                aria-label="ダークモード切り替え"
+              >
+                {isDarkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+              </button>
             </div>
             
-            <div className="text-sm text-gray-600 mb-6 p-4 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
+            <div className={`text-base mb-6 p-4 rounded-lg border-l-4 transition-colors duration-300 ${
+              isDarkMode 
+                ? 'text-gray-300 bg-yellow-900/30 border-yellow-500' 
+                : 'text-gray-600 bg-yellow-50 border-yellow-400'
+            }`}>
               <strong>令和6年度改定対応</strong> - 厚生労働省の最新料金体系に基づいて計算されます
             </div>
 
             <div className="grid md:grid-cols-2 gap-6">
               <div className="space-y-4">
-                <div className="bg-gray-50 p-4 rounded-xl">
-                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <div className={`rounded-xl p-4 transition-colors duration-300 ${
+                  isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                }`}>
+                  <h3 className={`text-xl font-semibold mb-4 flex items-center gap-2 ${
+                    isDarkMode ? 'text-white' : 'text-gray-800'
+                  }`}>
                     <FileText className="w-5 h-5" />
                     施術種別
                   </h3>
@@ -266,7 +329,7 @@
                         onChange={(e) => setTreatmentTypes({...treatmentTypes, massage: e.target.checked})}
                         className="w-4 h-4 text-blue-600"
                       />
-                      <span className="text-gray-700">あん摩マッサージ指圧</span>
+                      <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'} text-base`}>あん摩マッサージ指圧</span>
                     </label>
                     <label className="flex items-center gap-3 cursor-pointer">
                       <input
@@ -275,7 +338,7 @@
                         onChange={(e) => setTreatmentTypes({...treatmentTypes, acupuncture: e.target.checked})}
                         className="w-4 h-4 text-blue-600"
                       />
-                      <span className="text-gray-700">はり・きゅう</span>
+                      <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'} text-base`}>はり・きゅう</span>
                     </label>
                   </div>
                 </div>
@@ -322,65 +385,102 @@
                     <div className="space-y-4">
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-2">
-                          同一日・同一建物での総患者数
+                          訪問種別
                         </label>
-                        <select
-                          value={visitDetails.totalPatients}
-                          onChange={(e) => setVisitDetails({...visitDetails, totalPatients: parseInt(e.target.value)})}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                        >
-                          <option value={1}>1人</option>
-                          <option value={2}>2人</option>
-                          <option value={3}>3人</option>
-                          <option value={4}>4人</option>
-                          <option value={5}>5人</option>
-                          <option value={6}>6人</option>
-                          <option value={7}>7人</option>
-                          <option value={8}>8人</option>
-                          <option value={9}>9人</option>
-                          <option value={10}>10人</option>
-                          <option value={15}>15人</option>
-                          <option value={20}>20人</option>
-                          <option value={30}>30人以上</option>
-                        </select>
-                        <p className="text-xs text-gray-600 mt-1">
-                          この患者数により訪問施術料の単価が決まります
-                        </p>
+                        <div className="space-y-3">
+                          <label className="flex items-center gap-3 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="visitTypeDetail"
+                              value="scheduled"
+                              checked={!visitDetails.isSuddenVisit}
+                              onChange={(e) => setVisitDetails({...visitDetails, isSuddenVisit: false})}
+                              className="w-4 h-4 text-blue-600"
+                            />
+                            <span className="text-gray-700">定期的・計画的な訪問施術</span>
+                          </label>
+                          <label className="flex items-center gap-3 cursor-pointer">
+                            <input
+                              type="radio"
+                              name="visitTypeDetail"
+                              value="sudden"
+                              checked={visitDetails.isSuddenVisit}
+                              onChange={(e) => setVisitDetails({...visitDetails, isSuddenVisit: true})}
+                              className="w-4 h-4 text-blue-600"
+                            />
+                            <span className="text-gray-700">突発的な往療</span>
+                          </label>
+                        </div>
                       </div>
 
-                      {isBothTreatmentsSelected && (
-                        <div>
-                          <label className="block text-sm font-medium text-gray-700 mb-2">
-                            訪問施術料適用先
-                          </label>
-                          <div className="space-y-2">
-                            <label className="flex items-center gap-3 cursor-pointer">
-                              <input
-                                type="radio"
-                                name="visitFeeAppliedTo"
-                                value="massage"
-                                checked={visitDetails.visitFeeAppliedTo === 'massage'}
-                                onChange={(e) => setVisitDetails({...visitDetails, visitFeeAppliedTo: e.target.value})}
-                                className="w-4 h-4 text-blue-600"
-                              />
-                              <span className="text-gray-700">マッサージに適用</span>
+                      {!visitDetails.isSuddenVisit && (
+                        <>
+                          <div>
+                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                              同一日・同一建物での総患者数
                             </label>
-                            <label className="flex items-center gap-3 cursor-pointer">
-                              <input
-                                type="radio"
-                                name="visitFeeAppliedTo"
-                                value="acupuncture"
-                                checked={visitDetails.visitFeeAppliedTo === 'acupuncture'}
-                                onChange={(e) => setVisitDetails({...visitDetails, visitFeeAppliedTo: e.target.value})}
-                                className="w-4 h-4 text-blue-600"
-                              />
-                              <span className="text-gray-700">鍼灸に適用</span>
-                            </label>
+                            <select
+                              value={visitDetails.totalPatients}
+                              onChange={(e) => setVisitDetails({...visitDetails, totalPatients: parseInt(e.target.value)})}
+                              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            >
+                              <option value={1}>1人</option>
+                              <option value={2}>2人</option>
+                              <option value={3}>3人</option>
+                              <option value={4}>4人</option>
+                              <option value={5}>5人</option>
+                              <option value={6}>6人</option>
+                              <option value={7}>7人</option>
+                              <option value={8}>8人</option>
+                              <option value={9}>9人</option>
+                              <option value={10}>10人</option>
+                              <option value={15}>15人</option>
+                              <option value={20}>20人</option>
+                              <option value={30}>30人以上</option>
+                            </select>
+                            <p className="text-xs text-gray-600 mt-1">
+                              この患者数により訪問施術料の単価が決まります
+                            </p>
                           </div>
-                        </div>
+
+                          {isBothTreatmentsSelected && (
+                            <div>
+                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                                訪問施術料適用先
+                              </label>
+                              <div className="space-y-2">
+                                <label className="flex items-center gap-3 cursor-pointer">
+                                  <input
+                                    type="radio"
+                                    name="visitFeeAppliedTo"
+                                    value="massage"
+                                    checked={visitDetails.visitFeeAppliedTo === 'massage'}
+                                    onChange={(e) => setVisitDetails({...visitDetails, visitFeeAppliedTo: e.target.value})}
+                                    className="w-4 h-4 text-blue-600"
+                                  />
+                                  <span className="text-gray-700">マッサージに適用</span>
+                                </label>
+                                <label className="flex items-center gap-3 cursor-pointer">
+                                  <input
+                                    type="radio"
+                                    name="visitFeeAppliedTo"
+                                    value="acupuncture"
+                                    checked={visitDetails.visitFeeAppliedTo === 'acupuncture'}
+                                    onChange={(e) => setVisitDetails({...visitDetails, visitFeeAppliedTo: e.target.value})}
+                                    className="w-4 h-4 text-blue-600"
+                                  />
+                                  <span className="text-gray-700">鍼灸に適用</span>
+                                </label>
+                              </div>
+                              <p className="text-xs text-gray-600 mt-1">
+                                併用時は、訪問施術料はどちらか一方にのみ適用されます
+                              </p>
+                            </div>
+                          )}
+                        </>
                       )}
 
-                      {treatmentTypes.acupuncture && (
+                      {treatmentTypes.acupuncture && !visitDetails.isSuddenVisit && (
                         <label className="flex items-center gap-3 cursor-pointer">
                           <input
                             type="checkbox"
@@ -392,15 +492,14 @@
                         </label>
                       )}
 
-                      <label className="flex items-center gap-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={visitDetails.isSuddenVisit}
-                          onChange={(e) => setVisitDetails({...visitDetails, isSuddenVisit: e.target.checked})}
-                          className="w-4 h-4 text-blue-600"
-                        />
-                        <span className="text-gray-700">突発的な往療</span>
-                      </label>
+                      {visitDetails.isSuddenVisit && (
+                        <div className="bg-yellow-50 p-3 rounded-lg border-l-4 border-yellow-400">
+                          <p className="text-sm text-yellow-800">
+                            <strong>突発的な往療</strong><br/>
+                            往療料 ¥2,300 + 通所施術料で計算されます
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                 )}
