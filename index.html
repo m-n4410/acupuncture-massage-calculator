@@ -324,13 +324,28 @@
                         <label className="block text-sm font-medium text-gray-700 mb-2">
                           同一日・同一建物での総患者数
                         </label>
-                        <input
-                          type="number"
-                          min="1"
+                        <select
                           value={visitDetails.totalPatients}
-                          onChange={(e) => setVisitDetails({...visitDetails, totalPatients: parseInt(e.target.value) || 1})}
-                          className="w-full px-3 py-2 border border-gray-300 rounded-lg"
-                        />
+                          onChange={(e) => setVisitDetails({...visitDetails, totalPatients: parseInt(e.target.value)})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                          <option value={1}>1人</option>
+                          <option value={2}>2人</option>
+                          <option value={3}>3人</option>
+                          <option value={4}>4人</option>
+                          <option value={5}>5人</option>
+                          <option value={6}>6人</option>
+                          <option value={7}>7人</option>
+                          <option value={8}>8人</option>
+                          <option value={9}>9人</option>
+                          <option value={10}>10人</option>
+                          <option value={15}>15人</option>
+                          <option value={20}>20人</option>
+                          <option value={30}>30人以上</option>
+                        </select>
+                        <p className="text-xs text-gray-600 mt-1">
+                          この患者数により訪問施術料の単価が決まります
+                        </p>
                       </div>
 
                       {isBothTreatmentsSelected && (
