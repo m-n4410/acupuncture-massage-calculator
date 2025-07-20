@@ -543,3 +543,106 @@
                         className="w-4 h-4 text-blue-600"
                       />
                       <span className="text-gray-700">特別地域加算（離島・中山間地等）</span>
+                    </label>
+                  </div>
+                )}
+              </div>
+
+              <div className="space-y-4">
+                {isAnyTreatmentSelected ? (
+                  <>
+                    <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-xl">
+                      <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
+                        <Calculator className="w-6 h-6" />
+                        料金計算結果
+                      </h3>
+                      
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center py-3 border-t-2 border-blue-300">
+                          <span className="text-lg font-semibold">療養費総額</span>
+                          <span className="text-2xl font-bold">¥{calculateFee.totalFee.toLocaleString()}</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="bg-green-50 p-4 rounded-xl border-2 border-green-200">
+                        <h4 className="font-semibold text-green-800 mb-2 text-sm">1割負担</h4>
+                        <p className="text-lg font-bold text-green-600">
+                          ¥{calculateFee.patientBurden1.toLocaleString()}
+                        </p>
+                        <p className="text-xs text-green-700">保険9割</p>
+                      </div>
+                      
+                      <div className="bg-blue-50 p-4 rounded-xl border-2 border-blue-200">
+                        <h4 className="font-semibold text-blue-800 mb-2 text-sm">2割負担</h4>
+                        <p className="text-lg font-bold text-blue-600">
+                          ¥{calculateFee.patientBurden2.toLocaleString()}
+                        </p>
+                        <p className="text-xs text-blue-700">保険8割</p>
+                      </div>
+                      
+                      <div className="bg-orange-50 p-4 rounded-xl border-2 border-orange-200">
+                        <h4 className="font-semibold text-orange-800 mb-2 text-sm">3割負担</h4>
+                        <p className="text-lg font-bold text-orange-600">
+                          ¥{calculateFee.patientBurden3.toLocaleString()}
+                        </p>
+                        <p className="text-xs text-orange-700">保険7割</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 p-6 rounded-xl">
+                      <h4 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                        <Clock className="w-5 h-5" />
+                        料金内訳
+                      </h4>
+                      <div className="space-y-2 text-sm">
+                        {calculateFee.breakdown.map((item, index) => (
+                          <div key={index} className="flex justify-between items-center py-1 border-b border-gray-200 last:border-b-0">
+                            <span className="text-gray-700">{item.split(':')[0]}</span>
+                            <span className="font-medium text-gray-900">{item.split(':')[1]}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {isBothTreatmentsSelected && visitType === 'visit' && (
+                      <div className="bg-amber-50 p-4 rounded-xl border-l-4 border-amber-400">
+                        <h4 className="font-semibold text-amber-800 mb-2">併用施術について</h4>
+                        <p className="text-sm text-amber-700">
+                          マッサージと鍼灸を併用する場合、訪問施術料は{visitDetails.visitFeeAppliedTo === 'massage' ? 'マッサージ' : '鍼灸'}に適用され、
+                          もう一方は通所料金で計算されます。
+                        </p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="bg-gray-100 p-8 rounded-xl text-center">
+                    <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-gray-600 mb-2">施術種別を選択してください</h3>
+                    <p className="text-gray-500">あん摩マッサージ指圧、または はり・きゅう を選択すると料金が計算されます</p>
+                  </div>
+                )}
+
+                <div className="bg-blue-50 p-4 rounded-xl border-l-4 border-blue-400">
+                  <h4 className="font-semibold text-blue-800 mb-2">注意事項</h4>
+                  <ul className="text-sm text-blue-700 space-y-1">
+                    <li>• 令和6年度改定料金に基づく計算です</li>
+                    <li>• 患者負担割合は1割・2割・3割で表示しています</li>
+                    <li>• 片道16km超の訪問は原則加算対象外です</li>
+                    <li>• 医師の同意書が必要です</li>
+                    <li>• 併用時は訪問施術料はどちらか一方にのみ適用されます</li>
+                    <li>• 施術報告書はマッサージと鍼灸で別々に算定されます</li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    };
+
+    ReactDOM.render(React.createElement(AcupunctureMassageFeeCalculator), document.getElementById('root'));
+  </script>
+</body>
+</html>
