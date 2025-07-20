@@ -103,7 +103,8 @@
       const [acupunctureTechnique, setAcupunctureTechnique] = useState('one');
       const [addOns, setAddOns] = useState({
         hotPack: false,
-        electricTherapy: false,
+        electricLightTherapy: false, // マッサージ用の電気光線器具
+        electricTherapyAcupuncture: false, // 鍼灸用の電療料
         manualCorrection: 0,
         specialArea: false,
         massageReportFee: false,
@@ -185,11 +186,11 @@
           
           totalFee += massageFee;
 
-          if (addOns.hotPack && !addOns.electricTherapy) {
+          if (addOns.hotPack && !addOns.electricLightTherapy) {
             totalFee += fees.addOns.hotPack;
             breakdown.push(`温罨法: ¥${fees.addOns.hotPack.toLocaleString()}`);
           }
-          if (addOns.hotPack && addOns.electricTherapy) {
+          if (addOns.hotPack && addOns.electricLightTherapy) {
             totalFee += fees.addOns.hotPackWithElectric;
             breakdown.push(`温罨法（電気光線器具併用）: ¥${fees.addOns.hotPackWithElectric.toLocaleString()}`);
           }
@@ -230,7 +231,7 @@
             breakdown.push(`初検料（${acupunctureTechnique === 'one' ? '1術' : '2術'}）: ¥${initialFee.toLocaleString()}`);
           }
 
-          if (addOns.electricTherapy && treatmentTypes.acupuncture) {
+          if (addOns.electricTherapyAcupuncture && treatmentTypes.acupuncture) {
             totalFee += fees.addOns.electricTherapyAcupuncture;
             breakdown.push(`電療料: ¥${fees.addOns.electricTherapyAcupuncture.toLocaleString()}`);
           }
