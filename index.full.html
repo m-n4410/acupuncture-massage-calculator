@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>訪問鍼灸マッサージ料金計算システム</title>
+  <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    }
+  </style>
+</head>
+<body>
+  <div id="root"></div>
+
+  <script type="text/babel">
+    const { useState, useMemo } = React;
+    
+    // アイコンコンポーネント
+    const Calculator = ({ className }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <rect x="4" y="2" width="16" height="20" rx="2"/>
+        <line x1="8" y1="6" x2="16" y2="6"/>
+        <line x1="16" y1="10" x2="8" y2="10"/>
+        <line x1="8" y1="14" x2="12" y2="14"/>
+        <line x1="8" y1="18" x2="12" y2="18"/>
+        <circle cx="16" cy="16" r="2"/>
+      </svg>
+    );
+
+    const MapPin = ({ className }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/>
+        <circle cx="12" cy="10" r="3"/>
+      </svg>
+    );
+
+    const Users = ({ className }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/>
+        <circle cx="9" cy="7" r="4"/>
+        <path d="M22 21v-2a4 4 0 0 0-3-3.87"/>
+        <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
+      </svg>
+    );
+
+    const Clock = ({ className }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <circle cx="12" cy="12" r="10"/>
+        <polyline points="12,6 12,12 16,14"/>
+      </svg>
+    );
+
+    const FileText = ({ className }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+        <polyline points="14,2 14,8 20,8"/>
+        <line x1="16" y1="13" x2="8" y2="13"/>
+        <line x1="16" y1="17" x2="8" y2="17"/>
+        <polyline points="10,9 9,9 8,9"/>
+      </svg>
+    );
+
+    const Plus = ({ className }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <line x1="12" y1="5" x2="12" y2="19"/>
+        <line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+    );
+
+    const Minus = ({ className }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+    );
+
+    const AcupunctureMassageFeeCalculator = () => {
+      const [treatmentTypes, setTreatmentTypes] = useState({
+        massage: false,
+        acupuncture: false
+      });
+      const [visitType, setVisitType] = useState('clinic');
+      const [massageAreas, setMassageAreas] = useState(1);
+      const [acupunctureTechnique, setAcupunctureTechnique] = useState('one');
+      const [addOns, setAddOns] = useState({
+        hotPack: false,
+        electricTherapy: false,
+        manualCorrection: 0,
+        specialArea: false,
+        massageReportFee: false,
+        acupunctureReportFee: false
+      });
+      const [visitDetails, setVisitDetails] = useState({
+        totalPatients: 1,
+        isInitialVisit: false,
+        isSuddenVisit: false,
+        visitFeeAppliedTo: 'massage'
+      });
+
+      const fees = {
+        massage: {
+          clinic: {
+            1: 450, 2: 900, 3: 1350, 4: 1800, 5: 2250
+          },
+          visit1: {
+            1: 2750, 2: 3200, 3: 3650, 4: 4100, 5: 4550
+          },
+          visit2: {
+            1: 1600, 2: 2050, 3: 2500, 4: 2950, 5: 3400
+          },
+          visit3to9: {
+            1: 910, 2: 1360, 3: 1810, 4: 2260, 5: 2710
+          },
+          visit10plus: {
+            1: 600, 2: 1050, 3: 1500, 4: 1950, 5: 2400
+          }
+        },
+        acupuncture: {
+          clinic: {
+            one: 1610,
+            two: 1770
+          },
+          visit1: {
+            one: 3910,
+            two: 4070
+          },
+          visit2: {
+            one: 2760,
+            two: 2920
+          },
+          visit3to9: {
+            one: 2070,
+            two: 2230
+          },
+          visit10plus: {
+            one: 1760,
+            two: 1920
+          },
+          initialFee: {
+            one: 1950,
+            two: 2230
+          }
+        },
+        addOns: {
+          hotPack: 180,
+          hotPackWithElectric: 300,
+          manualCorrection: 470,
+          electricTherapyAcupuncture: 100,
+          specialArea: 250,
+          suddenVisit: 2300,
+          reportFee: 480
+        }
+      };
+
+      const getVisitFeeCategory = (totalPatients) => {
+        if (totalPatients === 1) return 'visit1';
+        if (totalPatients === 2) return 'visit2';
+        if (totalPatients >= 3 && totalPatients <= 9) return 'visit3to9';
+        return 'visit10plus';
+      };
+
+      const getVisitFeeName = (totalPatients) => {
+        if (totalPatients === 1) return '訪問施術料１';
+        if (totalPatients === 2) return '訪問施術料２';
+        if (totalPatients >= 3 && totalPatients <= 9) return '訪問施術料３（3-9人）';
+        return '訪問施術料３（10人以上）';
+      };
+
+      const calculateFee = useMemo(() => {
+        let totalFee = 0;
+        let breakdown = [];
+
+        if (treatmentTypes.massage) {
+          let massageFee = 0;
+          
+          if (visitType === 'clinic') {
+            massageFee = fees.massage.clinic[massageAreas];
+            breakdown.push(`マッサージ施術料（${massageAreas}局所・通所）: ¥${massageFee.toLocaleString()}`);
+          } else if (visitDetails.visitFeeAppliedTo === 'massage') {
+            const category = getVisitFeeCategory(visitDetails.totalPatients);
+            massageFee = fees.massage[category][massageAreas];
+            breakdown.push(`${getVisitFeeName(visitDetails.totalPatients)}（マッサージ・${massageAreas}局所）: ¥${massageFee.toLocaleString()}`);
+          } else {
+            massageFee = fees.massage.clinic[massageAreas];
+            breakdown.push(`マッサージ施術料（${massageAreas}局所・併用時）: ¥${massageFee.toLocaleString()}`);
+          }
+          
+          totalFee += massageFee;
+
+          if (addOns.hotPack && !addOns.electricTherapy) {
+            totalFee += fees.addOns.hotPack;
+            breakdown.push(`温罨法: ¥${fees.addOns.hotPack.toLocaleString()}`);
+          }
+          if (addOns.hotPack && addOns.electricTherapy) {
+            totalFee += fees.addOns.hotPackWithElectric;
+            breakdown.push(`温罨法（電気光線器具併用）: ¥${fees.addOns.hotPackWithElectric.toLocaleString()}`);
+          }
+          if (addOns.manualCorrection > 0) {
+            const manualFee = fees.addOns.manualCorrection * addOns.manualCorrection;
+            totalFee += manualFee;
+            breakdown.push(`変形徒手矯正術（${addOns.manualCorrection}肢）: ¥${manualFee.toLocaleString()}`);
+          }
+        }
+
+        if (treatmentTypes.acupuncture) {
+          let acupunctureFee = 0;
+          
+          if (visitType === 'clinic') {
+            acupunctureFee = fees.acupuncture.clinic[acupunctureTechnique];
+            breakdown.push(`鍼灸施術料（${acupunctureTechnique === 'one' ? '1術' : '2術'}・通所）: ¥${acupunctureFee.toLocaleString()}`);
+          } else if (visitDetails.visitFeeAppliedTo === 'acupuncture') {
+            const category = getVisitFeeCategory(visitDetails.totalPatients);
+            acupunctureFee = fees.acupuncture[category][acupunctureTechnique];
+            breakdown.push(`${getVisitFeeName(visitDetails.totalPatients)}（鍼灸・${acupunctureTechnique === 'one' ? '1術' : '2術'}）: ¥${acupunctureFee.toLocaleString()}`);
+          } else {
+            acupunctureFee = fees.acupuncture.clinic[acupunctureTechnique];
+            breakdown.push(`鍼灸施術料（${acupunctureTechnique === 'one' ? '1術' : '2術'}・併用時）: ¥${acupunctureFee.toLocaleString()}`);
+          }
+          
+          totalFee += acupunctureFee;
+
+          if (visitDetails.isInitialVisit) {
+            const initialFee = fees.acupuncture.initialFee[acupunctureTechnique];
+            totalFee += initialFee;
+            breakdown.push(`初検料（${acupunctureTechnique === 'one' ? '1術' : '2術'}）: ¥${initialFee.toLocaleString()}`);
+          }
+
+          if (addOns.electricTherapy && treatmentTypes.acupuncture) {
+            totalFee += fees.addOns.electricTherapyAcupuncture;
+            breakdown.push(`電療料: ¥${fees.addOns.electricTherapyAcupuncture.toLocaleString()}`);
+          }
+        }
+
+        if (addOns.specialArea) {
+          totalFee += fees.addOns.specialArea;
+          breakdown.push(`特別地域加算: ¥${fees.addOns.specialArea.toLocaleString()}`);
+        }
+
+        if (visitDetails.isSuddenVisit) {
+          totalFee += fees.addOns.suddenVisit;
+          breakdown.push(`往療料（突発的往療）: ¥${fees.addOns.suddenVisit.toLocaleString()}`);
+        }
+
+        if (treatmentTypes.massage && addOns.massageReportFee) {
+          totalFee += fees.addOns.reportFee;
+          breakdown.push(`施術報告書交付料（マッサージ）: ¥${fees.addOns.reportFee.toLocaleString()}`);
+        }
+        
+        if (treatmentTypes.acupuncture && addOns.acupunctureReportFee) {
+          totalFee += fees.addOns.reportFee;
+          breakdown.push(`施術報告書交付料（鍼灸）: ¥${fees.addOns.reportFee.toLocaleString()}`);
+        }
+
+        const patientBurden1 = Math.floor(totalFee * 0.1);
+        const patientBurden2 = Math.floor(totalFee * 0.2);
+        const patientBurden3 = Math.floor(totalFee * 0.3);
+
+        return {
+          totalFee,
+          patientBurden1,
+          patientBurden2,
+          patientBurden3,
+          breakdown
+        };
+      }, [treatmentTypes, visitType, massageAreas, acupunctureTechnique, addOns, visitDetails]);
+
+      const isBothTreatmentsSelected = treatmentTypes.massage && treatmentTypes.acupuncture;
+      const isAnyTreatmentSelected = treatmentTypes.massage || treatmentTypes.acupuncture;
+
+      return (
+        <div className="max-w-4xl mx-auto p-4 bg-gradient-to-br from-blue-50 to-green-50 min-h-screen">
+          <div className="bg-white rounded-2xl shadow-xl p-6">
+            <div className="flex items-center gap-3 mb-6">
+              <Calculator className="w-8 h-8 text-blue-600" />
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-800">
+                訪問鍼灸マッサージ料金計算システム
+              </h1>
+            </div>
+            
+            <div className="text-sm text-gray-600 mb-6 p-4 bg-yellow-50 rounded-lg border-l-4 border-yellow-400">
+              <strong>令和6年度改定対応</strong> - 厚生労働省の最新料金体系に基づいて計算されます
+            </div>
+
+            <div className="grid md:grid-cols-2 gap-6">
+              {/* 設定パネル */}
+              <div className="space-y-4">
+                {/* 施術種別 */}
+                <div className="bg-gray-50 p-4 rounded-xl">
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <FileText className="w-5 h-5" />
+                    施術種別
+                  </h3>
+                  <div className="space-y-3">
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={treatmentTypes.massage}
+                        onChange={(e) => setTreatmentTypes({...treatmentTypes, massage: e.target.checked})}
+                        className="w-4 h-4 text-blue-600"
+                      />
+                      <span className="text-gray-700">あん摩マッサージ指圧</span>
+                    </label>
+                    <label className="flex items-center gap-3 cursor-pointer">
+                      <input
+                        type="checkbox"
+                        checked={treatmentTypes.acupuncture}
+                        onChange={(e) => setTreatmentTypes({...treatmentTypes, acupuncture: e.target.checked})}
+                        className="w-4 h-4 text-blue-600"
+                      />
+                      <span className="text-gray-700">はり・きゅう</span>
+                    </label>
+                  </div>
+                </div>
+
+                {/* 施術場所 */}
+                {isAnyTreatmentSelected && (
+                  <div className="bg-gray-50 p-4 rounded-xl">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <MapPin className="w-5 h-5" />
+                      施術場所
+                    </h3>
+                    <div className="space-y-3">
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="visitType"
+                          value="clinic"
+                          checked={visitType === 'clinic'}
+                          onChange={(e) => setVisitType(e.target.value)}
+                          className="w-4 h-4 text-blue-600"
+                        />
+                        <span className="text-gray-700">通所（施術所）</span>
+                      </label>
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="visitType"
+                          value="visit"
+                          checked={visitType === 'visit'}
+                          onChange={(e) => setVisitType(e.target.value)}
+                          className="w-4 h-4 text-blue-600"
+                        />
+                        <span className="text-gray-700">訪問</span>
+                      </label>
+                    </div>
+                  </div>
+                )}
+
+                {/* 訪問詳細 */}
+                {visitType === 'visit' && isAnyTreatmentSelected && (
+                  <div className="bg-gray-50 p-4 rounded-xl">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <Users className="w-5 h-5" />
+                      訪問詳細
+                    </h3>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                          同一日・同一建物での総患者数
+                        </label>
+                        <input
+                          type="number"
+                          min="1"
+                          value={visitDetails.totalPatients}
+                          onChange={(e) => setVisitDetails({...visitDetails, totalPatients: parseInt(e.target.value) || 1})}
+                          className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                      </div>
+
+                      {isBothTreatmentsSelected && (
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700 mb-2">
+                            訪問施術料適用先
+                          </label>
+                          <div className="space-y-2">
+                            <label className="flex items-center gap-3 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="visitFeeAppliedTo"
+                                value="massage"
+                                checked={visitDetails.visitFeeAppliedTo === 'massage'}
+                                onChange={(e) => setVisitDetails({...visitDetails, visitFeeAppliedTo: e.target.value})}
+                                className="w-4 h-4 text-blue-600"
+                              />
+                              <span className="text-gray-700">マッサージに適用</span>
+                            </label>
+                            <label className="flex items-center gap-3 cursor-pointer">
+                              <input
+                                type="radio"
+                                name="visitFeeAppliedTo"
+                                value="acupuncture"
+                                checked={visitDetails.visitFeeAppliedTo === 'acupuncture'}
+                                onChange={(e) => setVisitDetails({...visitDetails, visitFeeAppliedTo: e.target.value})}
+                                className="w-4 h-4 text-blue-600"
+                              />
+                              <span className="text-gray-700">鍼灸に適用</span>
+                            </label>
+                          </div>
+                        </div>
+                      )}
+
+                      {treatmentTypes.acupuncture && (
+                        <label className="flex items-center gap-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={visitDetails.isInitialVisit}
+                            onChange={(e) => setVisitDetails({...visitDetails, isInitialVisit: e.target.checked})}
+                            className="w-4 h-4 text-blue-600"
+                          />
+                          <span className="text-gray-700">初回訪問（初検料加算）</span>
+                        </label>
+                      )}
+
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={visitDetails.isSuddenVisit}
+                          onChange={(e) => setVisitDetails({...visitDetails, isSuddenVisit: e.target.checked})}
+                          className="w-4 h-4 text-blue-600"
+                        />
+                        <span className="text-gray-700">突発的な往療</span>
+                      </label>
+                    </div>
+                  </div>
+                )}
+
+                {/* マッサージ設定 */}
+                {treatmentTypes.massage && (
+                  <>
+                    <div className="bg-gray-50 p-4 rounded-xl">
+                      <h3 className="text-lg font-semibold mb-4">マッサージ施術局所数</h3>
+                      <div className="flex items-center gap-4">
+                        <button
+                          onClick={() => setMassageAreas(Math.max(1, massageAreas - 1))}
+                          className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center hover:bg-blue-200 transition-colors"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <span className="text-xl font-semibold px-4">{massageAreas}局所</span>
+                        <button
+                          onClick={() => setMassageAreas(Math.min(5, massageAreas + 1))}
+                          className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center hover:bg-blue-200 transition-colors"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 p-4 rounded-xl">
+                      <h3 className="text-lg font-semibold mb-4">変形徒手矯正術</h3>
+                      <div className="flex items-center gap-4">
+                        <button
+                          onClick={() => setAddOns({...addOns, manualCorrection: Math.max(0, addOns.manualCorrection - 1)})}
+                          className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center hover:bg-blue-200 transition-colors"
+                        >
+                          <Minus className="w-4 h-4" />
+                        </button>
+                        <span className="text-xl font-semibold px-4">{addOns.manualCorrection}肢</span>
+                        <button
+                          onClick={() => setAddOns({...addOns, manualCorrection: Math.min(4, addOns.manualCorrection + 1)})}
+                          className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center hover:bg-blue-200 transition-colors"
+                        >
+                          <Plus className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 p-4 rounded-xl">
+                      <h3 className="text-lg font-semibold mb-4">温罨法</h3>
+                      <div className="space-y-3">
+                        <label className="flex items-center gap-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={addOns.hotPack}
+                            onChange={(e) => setAddOns({...addOns, hotPack: e.target.checked})}
+                            className="w-4 h-4 text-blue-600"
+                          />
+                          <span className="text-gray-700">温罨法を併施</span>
+                        </label>
+                        {addOns.hotPack && (
+                          <label className="flex items-center gap-3 cursor-pointer ml-6">
+                            <input
+                              type="checkbox"
+                              checked={addOns.electricTherapy}
+                              onChange={(e) => setAddOns({...addOns, electricTherapy: e.target.checked})}
+                              className="w-4 h-4 text-blue-600"
+                            />
+                            <span className="text-gray-700">電気光線器具併用</span>
+                          </label>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 p-4 rounded-xl">
+                      <h3 className="text-lg font-semibold mb-4">施術報告書（マッサージ）</h3>
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={addOns.massageReportFee}
+                          onChange={(e) => setAddOns({...addOns, massageReportFee: e.target.checked})}
+                          className="w-4 h-4 text-blue-600"
+                        />
+                        <span className="text-gray-700">施術報告書交付料</span>
+                      </label>
+                    </div>
+                  </>
+                )}
+
+                {/* 鍼灸設定 */}
+                {treatmentTypes.acupuncture && (
+                  <>
+                    <div className="bg-gray-50 p-4 rounded-xl">
+                      <h3 className="text-lg font-semibold mb-4">鍼灸施術技法</h3>
+                      <div className="space-y-3">
+                        <label className="flex items-center gap-3 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="acupunctureTechnique"
+                            value="one"
+                            checked={acupunctureTechnique === 'one'}
+                            onChange={(e) => setAcupunctureTechnique(e.target.value)}
+                            className="w-4 h-4 text-blue-600"
+                          />
+                          <span className="text-gray-700">1術（はり又はきゅうのいずれか一方）</span>
+                        </label>
+                        <label className="flex items-center gap-3 cursor-pointer">
+                          <input
+                            type="radio"
+                            name="acupunctureTechnique"
+                            value="two"
+                            checked={acupunctureTechnique === 'two'}
+                            onChange={(e) => setAcupunctureTechnique(e.target.value)}
+                            className="w-4 h-4 text-blue-600"
+                          />
+                          <span className="text-gray-700">2術（はり・きゅう併用）</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 p-4 rounded-xl">
+                      <h3 className="text-lg font-semibold mb-4">電療料</h3>
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={addOns.electricTherapy && treatmentTypes.acupuncture}
+                          onChange={(e) => setAddOns({...addOns, electricTherapy: e.target.checked})}
+                          className="w-4 h-4 text-blue-600"
+                        />
+                        <span className="text-gray-700">電気針・電気温灸器・電気光線器具を使用</span>
+                      </label>
+                    </div>
+
+                    <div className="bg-gray-50 p-4 rounded-xl">
+                      <h3 className="text-lg font-semibold mb-4">施術報告書（鍼灸）</h3>
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={addOns.acupunctureReportFee}
+                          onChange={(e) => setAddOns({...addOns, acupunctureReportFee: e.target.checked})}
