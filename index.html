@@ -8,6 +8,25 @@
   <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
   <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
   <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontSize: {
+            'base': '1.125rem',
+            'sm': '1rem',
+            'xs': '0.875rem'
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    body {
+      font-size: 1.125rem;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', sans-serif;
+    }
+  </style>
 </head>
 <body>
   <div id="root"></div>
@@ -66,6 +85,12 @@
       </svg>
     );
 
+    const Minus = ({ className }) => (
+      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+        <line x1="5" y1="12" x2="19" y2="12"/>
+      </svg>
+    );
+
     const Sun = ({ className }) => (
       <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
         <circle cx="12" cy="12" r="5"/>
@@ -86,12 +111,6 @@
       </svg>
     );
 
-    const Minus = ({ className }) => (
-      <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-        <line x1="5" y1="12" x2="19" y2="12"/>
-      </svg>
-    );
-
     const AcupunctureMassageFeeCalculator = () => {
       const [isDarkMode, setIsDarkMode] = useState(false);
       const [treatmentTypes, setTreatmentTypes] = useState({
@@ -101,15 +120,18 @@
       const [visitType, setVisitType] = useState('clinic');
       const [massageAreas, setMassageAreas] = useState(1);
       const [acupunctureTechnique, setAcupunctureTechnique] = useState('one');
+      
+      // 重要: 完全に分離された状態変数
       const [addOns, setAddOns] = useState({
         hotPack: false,
-        electricLightTherapy: false, // マッサージ用の電気光線器具
-        electricTherapyAcupuncture: false, // 鍼灸用の電療料
+        massageElectricLight: false,  // マッサージ用の電気光線器具
+        acupunctureElectric: false,   // 鍼灸用の電療料
         manualCorrection: 0,
         specialArea: false,
         massageReportFee: false,
         acupunctureReportFee: false
       });
+      
       const [visitDetails, setVisitDetails] = useState({
         totalPatients: 1,
         isInitialVisit: false,
@@ -166,7 +188,6 @@
           let massageFee = 0;
           
           if (visitType === 'clinic' || visitDetails.isSuddenVisit) {
-            // 通所または突発的往療の場合
             massageFee = fees.massage.clinic[massageAreas];
             if (visitDetails.isSuddenVisit) {
               breakdown.push(`マッサージ施術料（${massageAreas}局所・突発的往療）: ¥${massageFee.toLocaleString()}`);
@@ -174,23 +195,22 @@
               breakdown.push(`マッサージ施術料（${massageAreas}局所・通所）: ¥${massageFee.toLocaleString()}`);
             }
           } else if (visitDetails.visitFeeAppliedTo === 'massage') {
-            // 定期的訪問施術料をマッサージに適用
             const category = getVisitFeeCategory(visitDetails.totalPatients);
             massageFee = fees.massage[category][massageAreas];
             breakdown.push(`${getVisitFeeName(visitDetails.totalPatients)}（マッサージ・${massageAreas}局所）: ¥${massageFee.toLocaleString()}`);
           } else {
-            // 通所料金のみ（訪問施術料は鍼灸に適用）
             massageFee = fees.massage.clinic[massageAreas];
             breakdown.push(`マッサージ施術料（${massageAreas}局所・併用時）: ¥${massageFee.toLocaleString()}`);
           }
           
           totalFee += massageFee;
 
-          if (addOns.hotPack && !addOns.electricLightTherapy) {
+          // マッサージ用の温罨法と電気光線器具
+          if (addOns.hotPack && !addOns.massageElectricLight) {
             totalFee += fees.addOns.hotPack;
             breakdown.push(`温罨法: ¥${fees.addOns.hotPack.toLocaleString()}`);
           }
-          if (addOns.hotPack && addOns.electricLightTherapy) {
+          if (addOns.hotPack && addOns.massageElectricLight) {
             totalFee += fees.addOns.hotPackWithElectric;
             breakdown.push(`温罨法（電気光線器具併用）: ¥${fees.addOns.hotPackWithElectric.toLocaleString()}`);
           }
@@ -205,7 +225,6 @@
           let acupunctureFee = 0;
           
           if (visitType === 'clinic' || visitDetails.isSuddenVisit) {
-            // 通所または突発的往療の場合
             acupunctureFee = fees.acupuncture.clinic[acupunctureTechnique];
             if (visitDetails.isSuddenVisit) {
               breakdown.push(`鍼灸施術料（${acupunctureTechnique === 'one' ? '1術' : '2術'}・突発的往療）: ¥${acupunctureFee.toLocaleString()}`);
@@ -213,12 +232,10 @@
               breakdown.push(`鍼灸施術料（${acupunctureTechnique === 'one' ? '1術' : '2術'}・通所）: ¥${acupunctureFee.toLocaleString()}`);
             }
           } else if (visitDetails.visitFeeAppliedTo === 'acupuncture') {
-            // 定期的訪問施術料を鍼灸に適用
             const category = getVisitFeeCategory(visitDetails.totalPatients);
             acupunctureFee = fees.acupuncture[category][acupunctureTechnique];
             breakdown.push(`${getVisitFeeName(visitDetails.totalPatients)}（鍼灸・${acupunctureTechnique === 'one' ? '1術' : '2術'}）: ¥${acupunctureFee.toLocaleString()}`);
           } else {
-            // 通所料金のみ（訪問施術料はマッサージに適用）
             acupunctureFee = fees.acupuncture.clinic[acupunctureTechnique];
             breakdown.push(`鍼灸施術料（${acupunctureTechnique === 'one' ? '1術' : '2術'}・併用時）: ¥${acupunctureFee.toLocaleString()}`);
           }
@@ -231,7 +248,8 @@
             breakdown.push(`初検料（${acupunctureTechnique === 'one' ? '1術' : '2術'}）: ¥${initialFee.toLocaleString()}`);
           }
 
-          if (addOns.electricTherapyAcupuncture && treatmentTypes.acupuncture) {
+          // 鍼灸用の電療料（完全に独立）
+          if (addOns.acupunctureElectric) {
             totalFee += fees.addOns.electricTherapyAcupuncture;
             breakdown.push(`電療料: ¥${fees.addOns.electricTherapyAcupuncture.toLocaleString()}`);
           }
@@ -345,8 +363,12 @@
                 </div>
 
                 {isAnyTreatmentSelected && (
-                  <div className="bg-gray-50 p-4 rounded-xl">
-                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <div className={`rounded-xl p-4 transition-colors duration-300 ${
+                    isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                  }`}>
+                    <h3 className={`text-xl font-semibold mb-4 flex items-center gap-2 ${
+                      isDarkMode ? 'text-white' : 'text-gray-800'
+                    }`}>
                       <MapPin className="w-5 h-5" />
                       施術場所
                     </h3>
@@ -360,7 +382,7 @@
                           onChange={(e) => setVisitType(e.target.value)}
                           className="w-4 h-4 text-blue-600"
                         />
-                        <span className="text-gray-700">通所（施術所）</span>
+                        <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'} text-base`}>通所（施術所）</span>
                       </label>
                       <label className="flex items-center gap-3 cursor-pointer">
                         <input
@@ -371,21 +393,27 @@
                           onChange={(e) => setVisitType(e.target.value)}
                           className="w-4 h-4 text-blue-600"
                         />
-                        <span className="text-gray-700">訪問</span>
+                        <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'} text-base`}>訪問</span>
                       </label>
                     </div>
                   </div>
                 )}
 
                 {visitType === 'visit' && isAnyTreatmentSelected && (
-                  <div className="bg-gray-50 p-4 rounded-xl">
-                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <div className={`rounded-xl p-4 transition-colors duration-300 ${
+                    isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                  }`}>
+                    <h3 className={`text-xl font-semibold mb-4 flex items-center gap-2 ${
+                      isDarkMode ? 'text-white' : 'text-gray-800'
+                    }`}>
                       <Users className="w-5 h-5" />
                       訪問詳細
                     </h3>
                     <div className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
+                        <label className={`block text-sm font-medium mb-2 ${
+                          isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                        }`}>
                           訪問種別
                         </label>
                         <div className="space-y-3">
@@ -398,7 +426,7 @@
                               onChange={(e) => setVisitDetails({...visitDetails, isSuddenVisit: false})}
                               className="w-4 h-4 text-blue-600"
                             />
-                            <span className="text-gray-700">定期的・計画的な訪問施術</span>
+                            <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'} text-base`}>定期的・計画的な訪問施術</span>
                           </label>
                           <label className="flex items-center gap-3 cursor-pointer">
                             <input
@@ -409,7 +437,7 @@
                               onChange={(e) => setVisitDetails({...visitDetails, isSuddenVisit: true})}
                               className="w-4 h-4 text-blue-600"
                             />
-                            <span className="text-gray-700">突発的な往療</span>
+                            <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'} text-base`}>突発的な往療</span>
                           </label>
                         </div>
                       </div>
@@ -417,7 +445,9 @@
                       {!visitDetails.isSuddenVisit && (
                         <>
                           <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-2">
+                            <label className={`block text-sm font-medium mb-2 ${
+                              isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                            }`}>
                               同一日・同一建物での総患者数
                             </label>
                             <select
@@ -439,14 +469,16 @@
                               <option value={20}>20人</option>
                               <option value={30}>30人以上</option>
                             </select>
-                            <p className="text-xs text-gray-600 mt-1">
+                            <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                               この患者数により訪問施術料の単価が決まります
                             </p>
                           </div>
 
                           {isBothTreatmentsSelected && (
                             <div>
-                              <label className="block text-sm font-medium text-gray-700 mb-2">
+                              <label className={`block text-sm font-medium mb-2 ${
+                                isDarkMode ? 'text-gray-300' : 'text-gray-700'
+                              }`}>
                                 訪問施術料適用先
                               </label>
                               <div className="space-y-2">
@@ -459,7 +491,7 @@
                                     onChange={(e) => setVisitDetails({...visitDetails, visitFeeAppliedTo: e.target.value})}
                                     className="w-4 h-4 text-blue-600"
                                   />
-                                  <span className="text-gray-700">マッサージに適用</span>
+                                  <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'} text-base`}>マッサージに適用</span>
                                 </label>
                                 <label className="flex items-center gap-3 cursor-pointer">
                                   <input
@@ -470,10 +502,10 @@
                                     onChange={(e) => setVisitDetails({...visitDetails, visitFeeAppliedTo: e.target.value})}
                                     className="w-4 h-4 text-blue-600"
                                   />
-                                  <span className="text-gray-700">鍼灸に適用</span>
+                                  <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'} text-base`}>鍼灸に適用</span>
                                 </label>
                               </div>
-                              <p className="text-xs text-gray-600 mt-1">
+                              <p className={`text-xs mt-1 ${isDarkMode ? 'text-gray-400' : 'text-gray-600'}`}>
                                 併用時は、訪問施術料はどちらか一方にのみ適用されます
                               </p>
                             </div>
@@ -489,13 +521,16 @@
                             onChange={(e) => setVisitDetails({...visitDetails, isInitialVisit: e.target.checked})}
                             className="w-4 h-4 text-blue-600"
                           />
-                          <span className="text-gray-700">初回訪問（初検料加算）</span>
                         </label>
                       )}
 
                       {visitDetails.isSuddenVisit && (
-                        <div className="bg-yellow-50 p-3 rounded-lg border-l-4 border-yellow-400">
-                          <p className="text-sm text-yellow-800">
+                        <div className={`p-3 rounded-lg border-l-4 ${
+                          isDarkMode 
+                            ? 'bg-yellow-900/30 border-yellow-500 text-yellow-300' 
+                            : 'bg-yellow-50 border-yellow-400 text-yellow-800'
+                        }`}>
+                          <p className="text-sm">
                             <strong>突発的な往療</strong><br/>
                             往療料 ¥2,300 + 通所施術料で計算されます
                           </p>
@@ -507,8 +542,12 @@
 
                 {treatmentTypes.massage && (
                   <>
-                    <div className="bg-gray-50 p-4 rounded-xl">
-                      <h3 className="text-lg font-semibold mb-4">マッサージ施術局所数</h3>
+                    <div className={`rounded-xl p-4 transition-colors duration-300 ${
+                      isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                    }`}>
+                      <h3 className={`text-xl font-semibold mb-4 ${
+                        isDarkMode ? 'text-white' : 'text-gray-800'
+                      }`}>マッサージ施術局所数</h3>
                       <div className="flex items-center gap-4">
                         <button
                           onClick={() => setMassageAreas(Math.max(1, massageAreas - 1))}
@@ -526,8 +565,12 @@
                       </div>
                     </div>
 
-                    <div className="bg-gray-50 p-4 rounded-xl">
-                      <h3 className="text-lg font-semibold mb-4">変形徒手矯正術</h3>
+                    <div className={`rounded-xl p-4 transition-colors duration-300 ${
+                      isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                    }`}>
+                      <h3 className={`text-xl font-semibold mb-4 ${
+                        isDarkMode ? 'text-white' : 'text-gray-800'
+                      }`}>変形徒手矯正術</h3>
                       <div className="flex items-center gap-4">
                         <button
                           onClick={() => setAddOns({...addOns, manualCorrection: Math.max(0, addOns.manualCorrection - 1)})}
@@ -545,8 +588,12 @@
                       </div>
                     </div>
 
-                    <div className="bg-gray-50 p-4 rounded-xl">
-                      <h3 className="text-lg font-semibold mb-4">温罨法</h3>
+                    <div className={`rounded-xl p-4 transition-colors duration-300 ${
+                      isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                    }`}>
+                      <h3 className={`text-xl font-semibold mb-4 ${
+                        isDarkMode ? 'text-white' : 'text-gray-800'
+                      }`}>温罨法</h3>
                       <div className="space-y-3">
                         <label className="flex items-center gap-3 cursor-pointer">
                           <input
@@ -555,24 +602,28 @@
                             onChange={(e) => setAddOns({...addOns, hotPack: e.target.checked})}
                             className="w-4 h-4 text-blue-600"
                           />
-                          <span className="text-gray-700">温罨法を併施</span>
+                          <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'} text-base`}>温罨法を併施</span>
                         </label>
                         {addOns.hotPack && (
                           <label className="flex items-center gap-3 cursor-pointer ml-6">
                             <input
                               type="checkbox"
-                              checked={addOns.electricTherapy}
-                              onChange={(e) => setAddOns({...addOns, electricTherapy: e.target.checked})}
+                              checked={addOns.massageElectricLight}
+                              onChange={(e) => setAddOns({...addOns, massageElectricLight: e.target.checked})}
                               className="w-4 h-4 text-blue-600"
                             />
-                            <span className="text-gray-700">電気光線器具併用</span>
+                            <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'} text-base`}>電気光線器具併用</span>
                           </label>
                         )}
                       </div>
                     </div>
 
-                    <div className="bg-gray-50 p-4 rounded-xl">
-                      <h3 className="text-lg font-semibold mb-4">施術報告書（マッサージ）</h3>
+                    <div className={`rounded-xl p-4 transition-colors duration-300 ${
+                      isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                    }`}>
+                      <h3 className={`text-xl font-semibold mb-4 ${
+                        isDarkMode ? 'text-white' : 'text-gray-800'
+                      }`}>施術報告書（マッサージ）</h3>
                       <label className="flex items-center gap-3 cursor-pointer">
                         <input
                           type="checkbox"
@@ -580,7 +631,7 @@
                           onChange={(e) => setAddOns({...addOns, massageReportFee: e.target.checked})}
                           className="w-4 h-4 text-blue-600"
                         />
-                        <span className="text-gray-700">施術報告書交付料</span>
+                        <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'} text-base`}>施術報告書交付料</span>
                       </label>
                     </div>
                   </>
@@ -588,8 +639,12 @@
 
                 {treatmentTypes.acupuncture && (
                   <>
-                    <div className="bg-gray-50 p-4 rounded-xl">
-                      <h3 className="text-lg font-semibold mb-4">鍼灸施術技法</h3>
+                    <div className={`rounded-xl p-4 transition-colors duration-300 ${
+                      isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                    }`}>
+                      <h3 className={`text-xl font-semibold mb-4 ${
+                        isDarkMode ? 'text-white' : 'text-gray-800'
+                      }`}>鍼灸施術技法</h3>
                       <div className="space-y-3">
                         <label className="flex items-center gap-3 cursor-pointer">
                           <input
@@ -600,7 +655,7 @@
                             onChange={(e) => setAcupunctureTechnique(e.target.value)}
                             className="w-4 h-4 text-blue-600"
                           />
-                          <span className="text-gray-700">1術（はり又はきゅうのいずれか一方）</span>
+                          <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'} text-base`}>1術（はり又はきゅうのいずれか一方）</span>
                         </label>
                         <label className="flex items-center gap-3 cursor-pointer">
                           <input
@@ -611,26 +666,34 @@
                             onChange={(e) => setAcupunctureTechnique(e.target.value)}
                             className="w-4 h-4 text-blue-600"
                           />
-                          <span className="text-gray-700">2術（はり・きゅう併用）</span>
+                          <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'} text-base`}>2術（はり・きゅう併用）</span>
                         </label>
                       </div>
                     </div>
 
-                    <div className="bg-gray-50 p-4 rounded-xl">
-                      <h3 className="text-lg font-semibold mb-4">電療料</h3>
+                    <div className={`rounded-xl p-4 transition-colors duration-300 ${
+                      isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                    }`}>
+                      <h3 className={`text-xl font-semibold mb-4 ${
+                        isDarkMode ? 'text-white' : 'text-gray-800'
+                      }`}>電療料</h3>
                       <label className="flex items-center gap-3 cursor-pointer">
                         <input
                           type="checkbox"
-                          checked={addOns.electricTherapy && treatmentTypes.acupuncture}
-                          onChange={(e) => setAddOns({...addOns, electricTherapy: e.target.checked})}
+                          checked={addOns.acupunctureElectric}
+                          onChange={(e) => setAddOns({...addOns, acupunctureElectric: e.target.checked})}
                           className="w-4 h-4 text-blue-600"
                         />
-                        <span className="text-gray-700">電気針・電気温灸器・電気光線器具を使用</span>
+                        <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'} text-base`}>電気針・電気温灸器・電気光線器具を使用</span>
                       </label>
                     </div>
 
-                    <div className="bg-gray-50 p-4 rounded-xl">
-                      <h3 className="text-lg font-semibold mb-4">施術報告書（鍼灸）</h3>
+                    <div className={`rounded-xl p-4 transition-colors duration-300 ${
+                      isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                    }`}>
+                      <h3 className={`text-xl font-semibold mb-4 ${
+                        isDarkMode ? 'text-white' : 'text-gray-800'
+                      }`}>施術報告書（鍼灸）</h3>
                       <label className="flex items-center gap-3 cursor-pointer">
                         <input
                           type="checkbox"
@@ -638,15 +701,19 @@
                           onChange={(e) => setAddOns({...addOns, acupunctureReportFee: e.target.checked})}
                           className="w-4 h-4 text-blue-600"
                         />
-                        <span className="text-gray-700">施術報告書交付料</span>
+                        <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'} text-base`}>施術報告書交付料</span>
                       </label>
                     </div>
                   </>
                 )}
 
                 {isAnyTreatmentSelected && (
-                  <div className="bg-gray-50 p-4 rounded-xl">
-                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                  <div className={`rounded-xl p-4 transition-colors duration-300 ${
+                    isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                  }`}>
+                    <h3 className={`text-xl font-semibold mb-4 flex items-center gap-2 ${
+                      isDarkMode ? 'text-white' : 'text-gray-800'
+                    }`}>
                       <Plus className="w-5 h-5" />
                       その他の加算
                     </h3>
@@ -657,7 +724,7 @@
                         onChange={(e) => setAddOns({...addOns, specialArea: e.target.checked})}
                         className="w-4 h-4 text-blue-600"
                       />
-                      <span className="text-gray-700">特別地域加算（離島・中山間地等）</span>
+                      <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'} text-base`}>特別地域加算（離島・中山間地等）</span>
                     </label>
                   </div>
                 )}
@@ -666,7 +733,9 @@
               <div className="space-y-4">
                 {isAnyTreatmentSelected ? (
                   <>
-                    <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-xl">
+                    <div className={`rounded-xl p-6 transition-colors duration-300 ${
+                      isDarkMode ? 'bg-gradient-to-r from-blue-700 to-blue-800' : 'bg-gradient-to-r from-blue-600 to-blue-700'
+                    } text-white`}>
                       <h3 className="text-xl font-semibold mb-4 flex items-center gap-2">
                         <Calculator className="w-6 h-6" />
                         料金計算結果
@@ -681,50 +750,94 @@
                     </div>
 
                     <div className="grid grid-cols-3 gap-3">
-                      <div className="bg-green-50 p-4 rounded-xl border-2 border-green-200">
-                        <h4 className="font-semibold text-green-800 mb-2 text-sm">1割負担</h4>
-                        <p className="text-lg font-bold text-green-600">
+                      <div className={`p-4 rounded-xl border-2 transition-colors duration-300 ${
+                        isDarkMode 
+                          ? 'bg-green-900/30 border-green-600 text-green-300' 
+                          : 'bg-green-50 border-green-200'
+                      }`}>
+                        <h4 className={`font-semibold mb-2 text-sm ${
+                          isDarkMode ? 'text-green-300' : 'text-green-800'
+                        }`}>1割負担</h4>
+                        <p className={`text-lg font-bold ${
+                          isDarkMode ? 'text-green-200' : 'text-green-600'
+                        }`}>
                           ¥{calculateFee.patientBurden1.toLocaleString()}
                         </p>
-                        <p className="text-xs text-green-700">保険9割</p>
+                        <p className={`text-xs ${
+                          isDarkMode ? 'text-green-400' : 'text-green-700'
+                        }`}>保険9割</p>
                       </div>
                       
-                      <div className="bg-blue-50 p-4 rounded-xl border-2 border-blue-200">
-                        <h4 className="font-semibold text-blue-800 mb-2 text-sm">2割負担</h4>
-                        <p className="text-lg font-bold text-blue-600">
+                      <div className={`p-4 rounded-xl border-2 transition-colors duration-300 ${
+                        isDarkMode 
+                          ? 'bg-blue-900/30 border-blue-600 text-blue-300' 
+                          : 'bg-blue-50 border-blue-200'
+                      }`}>
+                        <h4 className={`font-semibold mb-2 text-sm ${
+                          isDarkMode ? 'text-blue-300' : 'text-blue-800'
+                        }`}>2割負担</h4>
+                        <p className={`text-lg font-bold ${
+                          isDarkMode ? 'text-blue-200' : 'text-blue-600'
+                        }`}>
                           ¥{calculateFee.patientBurden2.toLocaleString()}
                         </p>
-                        <p className="text-xs text-blue-700">保険8割</p>
+                        <p className={`text-xs ${
+                          isDarkMode ? 'text-blue-400' : 'text-blue-700'
+                        }`}>保険8割</p>
                       </div>
                       
-                      <div className="bg-orange-50 p-4 rounded-xl border-2 border-orange-200">
-                        <h4 className="font-semibold text-orange-800 mb-2 text-sm">3割負担</h4>
-                        <p className="text-lg font-bold text-orange-600">
+                      <div className={`p-4 rounded-xl border-2 transition-colors duration-300 ${
+                        isDarkMode 
+                          ? 'bg-orange-900/30 border-orange-600 text-orange-300' 
+                          : 'bg-orange-50 border-orange-200'
+                      }`}>
+                        <h4 className={`font-semibold mb-2 text-sm ${
+                          isDarkMode ? 'text-orange-300' : 'text-orange-800'
+                        }`}>3割負担</h4>
+                        <p className={`text-lg font-bold ${
+                          isDarkMode ? 'text-orange-200' : 'text-orange-600'
+                        }`}>
                           ¥{calculateFee.patientBurden3.toLocaleString()}
                         </p>
-                        <p className="text-xs text-orange-700">保険7割</p>
+                        <p className={`text-xs ${
+                          isDarkMode ? 'text-orange-400' : 'text-orange-700'
+                        }`}>保険7割</p>
                       </div>
                     </div>
 
-                    <div className="bg-gray-50 p-6 rounded-xl">
-                      <h4 className="font-semibold text-gray-800 mb-4 flex items-center gap-2">
+                    <div className={`rounded-xl p-6 transition-colors duration-300 ${
+                      isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                    }`}>
+                      <h4 className={`font-semibold mb-4 flex items-center gap-2 ${
+                        isDarkMode ? 'text-white' : 'text-gray-800'
+                      }`}>
                         <Clock className="w-5 h-5" />
                         料金内訳
                       </h4>
                       <div className="space-y-2 text-sm">
                         {calculateFee.breakdown.map((item, index) => (
-                          <div key={index} className="flex justify-between items-center py-1 border-b border-gray-200 last:border-b-0">
-                            <span className="text-gray-700">{item.split(':')[0]}</span>
-                            <span className="font-medium text-gray-900">{item.split(':')[1]}</span>
+                          <div key={index} className={`flex justify-between items-center py-1 border-b last:border-b-0 ${
+                            isDarkMode ? 'border-gray-600' : 'border-gray-200'
+                          }`}>
+                            <span className={isDarkMode ? 'text-gray-300' : 'text-gray-700'}>{item.split(':')[0]}</span>
+                            <span className={`font-medium ${isDarkMode ? 'text-white' : 'text-gray-900'}`}>{item.split(':')[1]}</span>
                           </div>
                         ))}
                       </div>
                     </div>
 
                     {isBothTreatmentsSelected && visitType === 'visit' && (
-                      <div className="bg-amber-50 p-4 rounded-xl border-l-4 border-amber-400">
-                        <h4 className="font-semibold text-amber-800 mb-2">併用施術について</h4>
-                        <p className="text-sm text-amber-700">
+                      <div className={`p-4 rounded-xl border-l-4 transition-colors duration-300 ${
+                        isDarkMode 
+                          ? 'bg-amber-900/30 border-amber-500 text-amber-300' 
+                          : 'bg-amber-50 border-amber-400'
+                      }`}>
+                        <h4 className={`font-semibold mb-2 ${
+                          isDarkMode ? 'text-amber-300' : 'text-amber-800'
+                        }`}>併用施術について</h4>
+                        <p className={`text-sm ${
+                          isDarkMode ? 'text-amber-200' : 'text-amber-700'
+                        }`}>
                           マッサージと鍼灸を併用する場合、訪問施術料は{visitDetails.visitFeeAppliedTo === 'massage' ? 'マッサージ' : '鍼灸'}に適用され、
                           もう一方は通所料金で計算されます。
                         </p>
@@ -732,16 +845,30 @@
                     )}
                   </>
                 ) : (
-                  <div className="bg-gray-100 p-8 rounded-xl text-center">
-                    <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold text-gray-600 mb-2">施術種別を選択してください</h3>
-                    <p className="text-gray-500">あん摩マッサージ指圧、または はり・きゅう を選択すると料金が計算されます</p>
+                  <div className={`p-8 rounded-xl text-center transition-colors duration-300 ${
+                    isDarkMode ? 'bg-gray-700' : 'bg-gray-100'
+                  }`}>
+                    <FileText className={`w-16 h-16 mx-auto mb-4 ${
+                      isDarkMode ? 'text-gray-500' : 'text-gray-400'
+                    }`} />
+                    <h3 className={`text-lg font-semibold mb-2 ${
+                      isDarkMode ? 'text-gray-300' : 'text-gray-600'
+                    }`}>施術種別を選択してください</h3>
+                    <p className={isDarkMode ? 'text-gray-400' : 'text-gray-500'}>あん摩マッサージ指圧、または はり・きゅう を選択すると料金が計算されます</p>
                   </div>
                 )}
 
-                <div className="bg-blue-50 p-4 rounded-xl border-l-4 border-blue-400">
-                  <h4 className="font-semibold text-blue-800 mb-2">注意事項</h4>
-                  <ul className="text-sm text-blue-700 space-y-1">
+                <div className={`p-4 rounded-xl border-l-4 transition-colors duration-300 ${
+                  isDarkMode 
+                    ? 'bg-blue-900/30 border-blue-500' 
+                    : 'bg-blue-50 border-blue-400'
+                }`}>
+                  <h4 className={`font-semibold mb-2 ${
+                    isDarkMode ? 'text-blue-300' : 'text-blue-800'
+                  }`}>注意事項</h4>
+                  <ul className={`text-sm space-y-1 ${
+                    isDarkMode ? 'text-blue-200' : 'text-blue-700'
+                  }`}>
                     <li>• 令和6年度改定料金に基づく計算です</li>
                     <li>• 患者負担割合は1割・2割・3割で表示しています</li>
                     <li>• 片道16km超の訪問は原則加算対象外です</li>
