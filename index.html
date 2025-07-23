@@ -521,6 +521,15 @@
                             onChange={(e) => setVisitDetails({...visitDetails, isInitialVisit: e.target.checked})}
                             className="w-4 h-4 text-blue-600"
                           />
+                      {treatmentTypes.acupuncture && !visitDetails.isSuddenVisit && (
+                        <label className="flex items-center gap-3 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={visitDetails.isInitialVisit}
+                            onChange={(e) => setVisitDetails({...visitDetails, isInitialVisit: e.target.checked})}
+                            className="w-4 h-4 text-blue-600"
+                          />
+                          <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'} text-base`}>初回訪問（初検料加算）</span>
                         </label>
                       )}
 
@@ -685,6 +694,23 @@
                           className="w-4 h-4 text-blue-600"
                         />
                         <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'} text-base`}>電気針・電気温灸器・電気光線器具を使用</span>
+                      </label>
+                    </div>
+
+                    <div className={`rounded-xl p-4 transition-colors duration-300 ${
+                      isDarkMode ? 'bg-gray-700' : 'bg-gray-50'
+                    }`}>
+                      <h3 className={`text-xl font-semibold mb-4 ${
+                        isDarkMode ? 'text-white' : 'text-gray-800'
+                      }`}>初検料</h3>
+                      <label className="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={visitDetails.isInitialVisit}
+                          onChange={(e) => setVisitDetails({...visitDetails, isInitialVisit: e.target.checked})}
+                          className="w-4 h-4 text-blue-600"
+                        />
+                        <span className={`${isDarkMode ? 'text-gray-300' : 'text-gray-700'} text-base`}>初検料を加算（初回のみ）</span>
                       </label>
                     </div>
 
