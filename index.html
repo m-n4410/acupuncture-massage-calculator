@@ -1,186 +1,489 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>訪問鍼灸マッサージ料金計算システム</title>
-  <style>
-    body { 
-      font-family: Arial, sans-serif; 
-      padding: 20px; 
-      max-width: 1200px; 
-      margin: 0 auto;
-    }
-    .container { 
-      display: grid; 
-      grid-template-columns: 1fr 1fr; 
-      gap: 20px; 
-    }
-    .section { 
-      background: #f5f5f5; 
-      padding: 20px; 
-      border-radius: 10px; 
-      margin-bottom: 20px;
-    }
-    .result { 
-      background: #e3f2fd; 
-      padding: 20px; 
-      border-radius: 10px;
-    }
-    h1 { color: #333; text-align: center; }
-    h3 { color: #555; margin-top: 0; }
-    label { display: block; margin: 10px 0; cursor: pointer; }
-    input[type="checkbox"], input[type="radio"] { margin-right: 10px; }
-    .total { font-size: 24px; font-weight: bold; color: #1976d2; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>訪問鍼灸マッサージ料金計算</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #f0f2f5;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .result {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            border-radius: 15px;
+            text-align: center;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+        }
+        
+        .total {
+            font-size: 3em;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+        
+        .burden-row {
+            display: flex;
+            justify-content: space-around;
+            margin: 20px 0;
+        }
+        
+        .burden {
+            background: rgba(255,255,255,0.2);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+            flex: 1;
+            margin: 0 10px;
+        }
+        
+        .settings {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        
+        .panel {
+            background: white;
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .panel h3 {
+            margin-top: 0;
+            color: #333;
+            border-bottom: 2px solid #eee;
+            padding-bottom: 10px;
+        }
+        
+        label {
+            display: block;
+            margin: 15px 0;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        input[type="checkbox"], input[type="radio"] {
+            margin-right: 10px;
+            transform: scale(1.2);
+        }
+        
+        .counter {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 15px;
+            margin: 15px 0;
+        }
+        
+        .counter button {
+            background: #3498db;
+            color: white;
+            border: none;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            font-size: 20px;
+            cursor: pointer;
+        }
+        
+        .counter button:hover {
+            background: #2980b9;
+        }
+        
+        .counter button:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+        
+        .counter-value {
+            font-size: 18px;
+            font-weight: bold;
+            min-width: 80px;
+            text-align: center;
+        }
+        
+        select {
+            padding: 8px;
+            font-size: 16px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        
+        @media (max-width: 768px) {
+            .settings {
+                grid-template-columns: 1fr;
+            }
+            .burden-row {
+                flex-direction: column;
+            }
+            .burden {
+                margin: 5px 0;
+            }
+            .total {
+                font-size: 2em;
+            }
+        }
+    </style>
 </head>
 <body>
-  <h1>🏥 訪問鍼灸マッサージ料金計算システム</h1>
-  
-  <div class="container">
-    <div>
-      <div class="section">
-        <h3>施術種別</h3>
-        <label>
-          <input type="checkbox" id="massage"> あん摩マッサージ指圧
-        </label>
-        <label>
-          <input type="checkbox" id="acupuncture"> はり・きゅう
-        </label>
-      </div>
-
-      <div class="section">
-        <h3>施術場所</h3>
-        <label>
-          <input type="radio" name="location" value="clinic" checked> 通所（施術所）
-        </label>
-        <label>
-          <input type="radio" name="location" value="visit"> 訪問
-        </label>
-      </div>
-
-      <div id="massage-options" class="section" style="display: none;">
-        <h3>マッサージ設定</h3>
-        <label>
-          施術局所数: <select id="massage-areas">
-            <option value="1">1局所</option>
-            <option value="2">2局所</option>
-            <option value="3">3局所</option>
-            <option value="4">4局所</option>
-            <option value="5">5局所</option>
-          </select>
-        </label>
-        <label>
-          <input type="checkbox" id="hot-pack"> 温罨法
-        </label>
-        <label>
-          <input type="checkbox" id="massage-electric"> 電気光線器具併用
-        </label>
-      </div>
-
-      <div id="acupuncture-options" class="section" style="display: none;">
-        <h3>鍼灸設定</h3>
-        <label>
-          <input type="radio" name="acu-type" value="one" checked> 1術
-        </label>
-        <label>
-          <input type="radio" name="acu-type" value="two"> 2術
-        </label>
-        <label>
-          <input type="checkbox" id="acu-electric"> 電療料
-        </label>
-        <label>
-          <input type="checkbox" id="initial-fee"> 初検料
-        </label>
-      </div>
+    <div class="header">
+        <h1>🏥 訪問鍼灸マッサージ料金計算システム</h1>
+        <p>令和6年度改定対応 - 厚生労働省の最新料金体系</p>
     </div>
-
-    <div>
-      <div class="result">
-        <h3>料金計算結果</h3>
+    
+    <div class="result">
+        <h2>💰 料金計算結果</h2>
         <div class="total" id="total">¥0</div>
-        <div id="breakdown"></div>
-      </div>
+        <div class="burden-row">
+            <div class="burden">
+                <div>1割負担</div>
+                <div id="burden1" style="font-size: 1.5em; font-weight: bold;">¥0</div>
+            </div>
+            <div class="burden">
+                <div>2割負担</div>
+                <div id="burden2" style="font-size: 1.5em; font-weight: bold;">¥0</div>
+            </div>
+            <div class="burden">
+                <div>3割負担</div>
+                <div id="burden3" style="font-size: 1.5em; font-weight: bold;">¥0</div>
+            </div>
+        </div>
+        <div id="breakdown" style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 8px; text-align: left;">
+            施術種別を選択してください
+        </div>
     </div>
-  </div>
+    
+    <div class="settings">
+        <div class="panel">
+            <h3>📋 施術種別</h3>
+            <label>
+                <input type="checkbox" id="massage"> あん摩マッサージ指圧
+            </label>
+            <label>
+                <input type="checkbox" id="acupuncture"> はり・きゅう
+            </label>
+        </div>
+        
+        <div class="panel">
+            <h3>📍 施術場所</h3>
+            <label>
+                <input type="radio" name="location" value="clinic" checked> 通所（施術所）
+            </label>
+            <label>
+                <input type="radio" name="location" value="visit"> 訪問
+            </label>
+            
+            <div id="visit-options" style="display: none; margin-top: 20px;">
+                <label>
+                    <input type="radio" name="visit-type" value="scheduled" checked> 定期的・計画的な訪問施術
+                </label>
+                <label>
+                    <input type="radio" name="visit-type" value="sudden"> 突発的な往療
+                </label>
+                <div id="patient-count" style="margin-top: 15px;">
+                    <label>同一日・同一建物での総患者数:</label>
+                    <select id="patients">
+                        <option value="1">1人</option>
+                        <option value="2">2人</option>
+                        <option value="3">3人</option>
+                        <option value="4">4人</option>
+                        <option value="5">5人</option>
+                        <option value="10">10人</option>
+                        <option value="30">30人以上</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <div class="panel" id="massage-panel" style="display: none;">
+            <h3>🤲 マッサージ設定</h3>
+            <div>
+                <strong>施術局所数:</strong>
+                <div class="counter">
+                    <button id="massage-minus">−</button>
+                    <div class="counter-value" id="massage-count">1局所</div>
+                    <button id="massage-plus">+</button>
+                </div>
+            </div>
+            <div>
+                <strong>変形徒手矯正術:</strong>
+                <div class="counter">
+                    <button id="manual-minus">−</button>
+                    <div class="counter-value" id="manual-count">0肢</div>
+                    <button id="manual-plus">+</button>
+                </div>
+            </div>
+            <label>
+                <input type="checkbox" id="hot-pack"> 温罨法を併施
+            </label>
+            <label>
+                <input type="checkbox" id="massage-electric" disabled> 電気光線器具併用
+            </label>
+            <label>
+                <input type="checkbox" id="massage-report"> 施術報告書交付料
+            </label>
+        </div>
+        
+        <div class="panel" id="acupuncture-panel" style="display: none;">
+            <h3>🔺 鍼灸設定</h3>
+            <label>
+                <input type="radio" name="acu-type" value="one" checked> 1術（はり又はきゅうのいずれか一方）
+            </label>
+            <label>
+                <input type="radio" name="acu-type" value="two"> 2術（はり・きゅう併用）
+            </label>
+            <label>
+                <input type="checkbox" id="acu-electric"> 電気針・電気温灸器・電気光線器具を使用
+            </label>
+            <label>
+                <input type="checkbox" id="initial-fee"> 初検料を加算（初回のみ）
+            </label>
+            <label>
+                <input type="checkbox" id="acu-report"> 施術報告書交付料
+            </label>
+        </div>
+    </div>
 
-  <script>
-    const fees = {
-      massage: { 1: 450, 2: 900, 3: 1350, 4: 1800, 5: 2250 },
-      acupuncture: { one: 1610, two: 1770 },
-      initialFee: { one: 1950, two: 2230 },
-      hotPack: 180,
-      hotPackElectric: 300,
-      electric: 100
-    };
+    <script>
+        const fees = {
+            massage: {
+                clinic: { 1: 450, 2: 900, 3: 1350, 4: 1800, 5: 2250 },
+                visit1: { 1: 2750, 2: 3200, 3: 3650, 4: 4100, 5: 4550 },
+                visit2: { 1: 1600, 2: 2050, 3: 2500, 4: 2950, 5: 3400 },
+                visit3to9: { 1: 910, 2: 1360, 3: 1810, 4: 2260, 5: 2710 },
+                visit10plus: { 1: 600, 2: 1050, 3: 1500, 4: 1950, 5: 2400 }
+            },
+            acupuncture: {
+                clinic: { one: 1610, two: 1770 },
+                visit1: { one: 3910, two: 4070 },
+                visit2: { one: 2760, two: 2920 },
+                visit3to9: { one: 2070, two: 2230 },
+                visit10plus: { one: 1760, two: 1920 }
+            },
+            initialFee: { one: 1950, two: 2230 },
+            hotPack: 180,
+            hotPackElectric: 300,
+            manualCorrection: 470,
+            electricAcu: 100,
+            suddenVisit: 2300,
+            reportFee: 480
+        };
 
-    function updateDisplay() {
-      const massage = document.getElementById('massage').checked;
-      const acupuncture = document.getElementById('acupuncture').checked;
-      
-      document.getElementById('massage-options').style.display = massage ? 'block' : 'none';
-      document.getElementById('acupuncture-options').style.display = acupuncture ? 'block' : 'none';
-      
-      calculateFee();
-    }
+        let massageAreas = 1;
+        let manualCorrection = 0;
 
-    function calculateFee() {
-      let total = 0;
-      let breakdown = [];
-
-      if (document.getElementById('massage').checked) {
-        const areas = parseInt(document.getElementById('massage-areas').value);
-        const massageFee = fees.massage[areas];
-        total += massageFee;
-        breakdown.push(`マッサージ ${areas}局所: ¥${massageFee.toLocaleString()}`);
-
-        if (document.getElementById('hot-pack').checked) {
-          if (document.getElementById('massage-electric').checked) {
-            total += fees.hotPackElectric;
-            breakdown.push(`温罨法（電気併用）: ¥${fees.hotPackElectric.toLocaleString()}`);
-          } else {
-            total += fees.hotPack;
-            breakdown.push(`温罨法: ¥${fees.hotPack.toLocaleString()}`);
-          }
+        function getVisitCategory(patients) {
+            if (patients === 1) return 'visit1';
+            if (patients === 2) return 'visit2';
+            if (patients >= 3 && patients <= 9) return 'visit3to9';
+            return 'visit10plus';
         }
-      }
 
-      if (document.getElementById('acupuncture').checked) {
-        const type = document.querySelector('input[name="acu-type"]:checked').value;
-        const acuFee = fees.acupuncture[type];
-        total += acuFee;
-        breakdown.push(`鍼灸 ${type === 'one' ? '1術' : '2術'}: ¥${acuFee.toLocaleString()}`);
+        function updateDisplay() {
+            const massage = document.getElementById('massage').checked;
+            const acupuncture = document.getElementById('acupuncture').checked;
+            const isVisit = document.querySelector('input[name="location"]:checked').value === 'visit';
+            const isSudden = isVisit && document.querySelector('input[name="visit-type"]:checked').value === 'sudden';
 
-        if (document.getElementById('initial-fee').checked) {
-          const initialFee = fees.initialFee[type];
-          total += initialFee;
-          breakdown.push(`初検料: ¥${initialFee.toLocaleString()}`);
+            document.getElementById('massage-panel').style.display = massage ? 'block' : 'none';
+            document.getElementById('acupuncture-panel').style.display = acupuncture ? 'block' : 'none';
+            document.getElementById('visit-options').style.display = isVisit ? 'block' : 'none';
+            document.getElementById('patient-count').style.display = isSudden ? 'none' : 'block';
+
+            const hotPack = document.getElementById('hot-pack').checked;
+            document.getElementById('massage-electric').disabled = !hotPack;
+            if (!hotPack) {
+                document.getElementById('massage-electric').checked = false;
+            }
+
+            calculateFee();
         }
 
-        if (document.getElementById('acu-electric').checked) {
-          total += fees.electric;
-          breakdown.push(`電療料: ¥${fees.electric.toLocaleString()}`);
+        function calculateFee() {
+            let total = 0;
+            let breakdown = [];
+            let visitFeeAdded = false;
+
+            const massage = document.getElementById('massage').checked;
+            const acupuncture = document.getElementById('acupuncture').checked;
+            const isVisit = document.querySelector('input[name="location"]:checked').value === 'visit';
+            const isSudden = isVisit && document.querySelector('input[name="visit-type"]:checked').value === 'sudden';
+
+            if (massage) {
+                let massageFee = 0;
+                
+                if (!isVisit || isSudden) {
+                    massageFee = fees.massage.clinic[massageAreas];
+                    breakdown.push(`マッサージ施術料（${massageAreas}局所${isSudden ? '・突発的往療' : '・通所'}）: ¥${massageFee.toLocaleString()}`);
+                } else {
+                    const patients = parseInt(document.getElementById('patients').value);
+                    const category = getVisitCategory(patients);
+                    massageFee = fees.massage[category][massageAreas];
+                    breakdown.push(`訪問施術料（マッサージ・${massageAreas}局所・${patients}人）: ¥${massageFee.toLocaleString()}`);
+                    visitFeeAdded = true;
+                }
+                
+                total += massageFee;
+
+                if (manualCorrection > 0) {
+                    const manualFee = fees.manualCorrection * manualCorrection;
+                    total += manualFee;
+                    breakdown.push(`変形徒手矯正術（${manualCorrection}肢）: ¥${manualFee.toLocaleString()}`);
+                }
+
+                if (document.getElementById('hot-pack').checked) {
+                    const hotPackFee = document.getElementById('massage-electric').checked ? 
+                        fees.hotPackElectric : fees.hotPack;
+                    total += hotPackFee;
+                    breakdown.push(`温罨法${document.getElementById('massage-electric').checked ? '（電気光線器具併用）' : ''}: ¥${hotPackFee.toLocaleString()}`);
+                }
+
+                if (document.getElementById('massage-report').checked) {
+                    total += fees.reportFee;
+                    breakdown.push(`施術報告書交付料（マッサージ）: ¥${fees.reportFee.toLocaleString()}`);
+                }
+            }
+
+            if (acupuncture) {
+                let acuFee = 0;
+                const type = document.querySelector('input[name="acu-type"]:checked').value;
+                
+                if (!isVisit || isSudden || visitFeeAdded) {
+                    acuFee = fees.acupuncture.clinic[type];
+                    const locationText = visitFeeAdded ? '併用' : (isSudden ? '突発的往療' : '通所');
+                    breakdown.push(`鍼灸施術料（${type === 'one' ? '1術' : '2術'}・${locationText}）: ¥${acuFee.toLocaleString()}`);
+                } else {
+                    const patients = parseInt(document.getElementById('patients').value);
+                    const category = getVisitCategory(patients);
+                    acuFee = fees.acupuncture[category][type];
+                    breakdown.push(`訪問施術料（鍼灸・${type === 'one' ? '1術' : '2術'}・${patients}人）: ¥${acuFee.toLocaleString()}`);
+                }
+                
+                total += acuFee;
+
+                if (document.getElementById('initial-fee').checked && !isSudden) {
+                    const initialFee = fees.initialFee[type];
+                    total += initialFee;
+                    breakdown.push(`初検料（${type === 'one' ? '1術' : '2術'}）: ¥${initialFee.toLocaleString()}`);
+                }
+
+                if (document.getElementById('acu-electric').checked) {
+                    total += fees.electricAcu;
+                    breakdown.push(`電療料: ¥${fees.electricAcu.toLocaleString()}`);
+                }
+
+                if (document.getElementById('acu-report').checked) {
+                    total += fees.reportFee;
+                    breakdown.push(`施術報告書交付料（鍼灸）: ¥${fees.reportFee.toLocaleString()}`);
+                }
+            }
+
+            if (isSudden) {
+                total += fees.suddenVisit;
+                breakdown.push(`往療料（突発的往療）: ¥${fees.suddenVisit.toLocaleString()}`);
+            }
+
+            document.getElementById('total').textContent = `¥${total.toLocaleString()}`;
+            document.getElementById('burden1').textContent = `¥${Math.floor(total * 0.1).toLocaleString()}`;
+            document.getElementById('burden2').textContent = `¥${Math.floor(total * 0.2).toLocaleString()}`;
+            document.getElementById('burden3').textContent = `¥${Math.floor(total * 0.3).toLocaleString()}`;
+            
+            document.getElementById('breakdown').innerHTML = breakdown.length > 0 ? 
+                breakdown.join('<br>') : '施術種別を選択してください';
         }
-      }
 
-      document.getElementById('total').textContent = `¥${total.toLocaleString()}`;
-      document.getElementById('breakdown').innerHTML = breakdown.map(item => `<div>${item}</div>`).join('');
-    }
+        function updateCounters() {
+            document.getElementById('massage-count').textContent = `${massageAreas}局所`;
+            document.getElementById('massage-minus').disabled = massageAreas <= 1;
+            document.getElementById('massage-plus').disabled = massageAreas >= 5;
+            
+            document.getElementById('manual-count').textContent = `${manualCorrection}肢`;
+            document.getElementById('manual-minus').disabled = manualCorrection <= 0;
+            document.getElementById('manual-plus').disabled = manualCorrection >= 4;
+        }
 
-    // イベントリスナー
-    document.getElementById('massage').addEventListener('change', updateDisplay);
-    document.getElementById('acupuncture').addEventListener('change', updateDisplay);
-    document.getElementById('massage-areas').addEventListener('change', calculateFee);
-    document.getElementById('hot-pack').addEventListener('change', calculateFee);
-    document.getElementById('massage-electric').addEventListener('change', calculateFee);
-    document.getElementById('acu-electric').addEventListener('change', calculateFee);
-    document.getElementById('initial-fee').addEventListener('change', calculateFee);
-    document.querySelectorAll('input[name="acu-type"]').forEach(radio => {
-      radio.addEventListener('change', calculateFee);
-    });
+        function init() {
+            // イベントリスナー設定
+            document.getElementById('massage').addEventListener('change', updateDisplay);
+            document.getElementById('acupuncture').addEventListener('change', updateDisplay);
+            
+            document.querySelectorAll('input[name="location"]').forEach(radio => {
+                radio.addEventListener('change', updateDisplay);
+            });
+            
+            document.querySelectorAll('input[name="visit-type"]').forEach(radio => {
+                radio.addEventListener('change', updateDisplay);
+            });
+            
+            document.getElementById('patients').addEventListener('change', calculateFee);
+            document.getElementById('hot-pack').addEventListener('change', updateDisplay);
+            document.getElementById('massage-electric').addEventListener('change', calculateFee);
+            document.getElementById('massage-report').addEventListener('change', calculateFee);
+            document.getElementById('acu-electric').addEventListener('change', calculateFee);
+            document.getElementById('initial-fee').addEventListener('change', calculateFee);
+            document.getElementById('acu-report').addEventListener('change', calculateFee);
+            
+            document.querySelectorAll('input[name="acu-type"]').forEach(radio => {
+                radio.addEventListener('change', calculateFee);
+            });
 
-    // 初期表示
-    updateDisplay();
-  </script>
+            // ボタンイベント
+            document.getElementById('massage-minus').addEventListener('click', () => {
+                if (massageAreas > 1) {
+                    massageAreas--;
+                    updateCounters();
+                    calculateFee();
+                }
+            });
+            
+            document.getElementById('massage-plus').addEventListener('click', () => {
+                if (massageAreas < 5) {
+                    massageAreas++;
+                    updateCounters();
+                    calculateFee();
+                }
+            });
+
+            document.getElementById('manual-minus').addEventListener('click', () => {
+                if (manualCorrection > 0) {
+                    manualCorrection--;
+                    updateCounters();
+                    calculateFee();
+                }
+            });
+            
+            document.getElementById('manual-plus').addEventListener('click', () => {
+                if (manualCorrection < 4) {
+                    manualCorrection++;
+                    updateCounters();
+                    calculateFee();
+                }
+            });
+
+            updateCounters();
+            updateDisplay();
+        }
+
+        // 初期化
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
 </body>
 </html>
